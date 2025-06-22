@@ -17,6 +17,12 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         elevation: 4,
     },
+    banner: {
+        width: "100%",
+        height: 200,
+        borderRadius: 8,
+        marginBottom: 16,
+    },
     title: {
         fontSize: 28,
         fontWeight: "700",

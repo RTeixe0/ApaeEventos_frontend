@@ -2,7 +2,7 @@ import { getUserEvents } from "@/services/event_services";
 import auth from "@react-native-firebase/auth";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import React, { useEffect, useLayoutEffect, useState } from "react";
-import { ActivityIndicator, Alert, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Text, View, Image } from "react-native";
 import Button from "../../components/ATOMIC/atoms/button";
 import { Event } from "../../src/domain/events";
 import styles from "../styles/eventId.style";
@@ -75,6 +75,9 @@ export default function EventDetailsPage() {
     return (
         <View style={styles.container}>
             <View style={styles.box}>
+                {event.bannerUrl && (
+                    <Image source={{ uri: event.bannerUrl }} style={styles.banner} />
+                )}
                 <Text style={styles.title}>{event.nome}</Text>
                 <Text style={styles.subtitle}>📍 {event.local}</Text>
                 <Text style={styles.date}>🗓️ {formattedDate}</Text>
