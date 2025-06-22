@@ -2,9 +2,13 @@ import GenericForm from "@/components/ATOMIC/molecules/form";
 import { createEvent } from "@/services/event_services";
 import { FormField } from "@/types/molecules";
 import auth from "@react-native-firebase/auth";
+// eslint-disable-next-line import/no-unresolved
+import storage from "@react-native-firebase/storage";
+// eslint-disable-next-line import/no-unresolved
+import * as ImagePicker from "expo-image-picker";
 import { router, useNavigation } from "expo-router";
 import React, { useLayoutEffect, useState } from "react";
-import { Alert } from "react-native";
+import { Alert, Image, ScrollView } from "react-native";
 
 export default function NewEventScreen() {
     const [formData, setFormData] = useState({
@@ -14,6 +18,7 @@ export default function NewEventScreen() {
         capacidade: "",
         bannerUrl: "",
     });
+    const [bannerUri, setBannerUri] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const navigation = useNavigation();
 
@@ -42,6 +47,25 @@ export default function NewEventScreen() {
         setShowDatePicker((prev) => ({ ...prev, [fieldKey]: show }));
     };
 
+    const handlePickImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+            Alert.alert("Permissão negada", "É necessário liberar o acesso às fotos.");
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.7,
+            allowsEditing: true,
+        });
+
+        if (!result.canceled) {
+            const asset = result.assets[0];
+            setBannerUri(asset.uri);
+        }
+    };
+
     const submitForm = async () => {
         setLoading(true);
         try {
@@ -51,13 +75,23 @@ export default function NewEventScreen() {
                 return;
             }
 
+            let bannerUrl = formData.bannerUrl;
+
+            if (bannerUri) {
+                const fileName = `banner_${Date.now()}`;
+                const reference = storage().ref(`banners/${fileName}`);
+                await reference.putFile(bannerUri);
+                bannerUrl = await reference.getDownloadURL();
+                setFormData((prev) => ({ ...prev, bannerUrl }));
+            }
+
             await createEvent(
                 {
                     nome: formData.nome,
                     data: formData.data,
                     local: formData.local,
                     capacidade: Number(formData.capacidade),
-                    bannerUrl: formData.bannerUrl,
+                    bannerUrl,
                 },
                 token
             );
@@ -71,6 +105,7 @@ export default function NewEventScreen() {
                 capacidade: "",
                 bannerUrl: "",
             });
+            setBannerUri(null);
         } catch (error) {
             console.error("Erro ao cadastrar evento:", error);
             Alert.alert("Erro", "Falha ao cadastrar evento.");
@@ -123,14 +158,14 @@ export default function NewEventScreen() {
             },
         },
         {
-            key: "bannerUrl",
-            type: "input",
+            key: "bannerButton",
+            type: "button",
             props: {
-                label: "Banner URL *",
-                placeholder: "banner url",
-                value: formData.bannerUrl,
-                onChangeText: handleInputChange("bannerUrl"),
-            }, // para testes ajustar depois
+                label: bannerUri ? "Trocar Banner" : "Selecionar Banner",
+                onPress: handlePickImage,
+                variant: "secondary",
+                containerStyle: { marginBottom: 16 },
+            },
         },
 
         {
@@ -144,17 +179,20 @@ export default function NewEventScreen() {
         },
     ];
     return (
-        <GenericForm
-            fields={formFields}
-            title="Digite os dados do novo evento"
-            containerStyle={{ padding: 16 }}
-            titleStyle={{
-                fontSize: 24,
-                fontWeight: "bold",
-                marginBottom: 16,
-            }}
-            showDatePicker={showDatePicker}
-            toggleDatePicker={toggleDatePicker}
-        />
+        <ScrollView contentContainerStyle={{ padding: 16 }}>
+            {bannerUri && (
+                <Image
+                    source={{ uri: bannerUri }}
+                    style={{ width: "100%", height: 200, marginBottom: 16, borderRadius: 16 }}
+                />
+            )}
+            <GenericForm
+                fields={formFields}
+                title="Digite os dados do novo evento"
+                containerStyle={{}}
+                showDatePicker={showDatePicker}
+                toggleDatePicker={toggleDatePicker}
+            />
+        </ScrollView>
     );
 }

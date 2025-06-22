@@ -52,6 +52,12 @@ const styles = StyleSheet.create({
         padding: 16,
         gap: 16,
     },
+    banner: {
+        width: "100%",
+        height: 200,
+        borderRadius: border.radiusLarge,
+        marginBottom: 16,
+    },
 });
 
 export default styles;
